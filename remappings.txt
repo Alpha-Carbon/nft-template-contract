@@ -1,3 +1,2 @@
-@openzeppelin/=lib/openzeppelin-contracts/
-ds-test/=lib/ds-test/src/
+@openzeppelin/=lib/openzeppelin-contracts
 base64=lib/base64
