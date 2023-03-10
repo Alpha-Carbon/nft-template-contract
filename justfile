@@ -16,19 +16,19 @@ BOBTH_KEY := "0x8075991ce870b93a8870eca0c0f91913d12f47948ca0fd25b49c6fa7cdbeee8b
 #$(shell mkdir -p ${OUTPUT_DIR})
 
 clean:
-	forge clean
+    forge clean
 
 project-tree:
-	tree -I 'lib|out|node_modules|cache|README*|*.lock|public|package.json|foundry.toml|tsconfig.json'
+    tree -I 'lib|out|node_modules|cache|README*|*.lock|public|package.json|foundry.toml|tsconfig.json'
 
 deps:
-	curl -L https://foundry.paradigm.xyz | bash
-	foundryup
+    curl -L https://foundry.paradigm.xyz | bash
+    foundryup
 
 # https://onbjerg.github.io/foundry-book/forge/dependencies.html
 deps-oz:
-	forge install openzeppelin/openzeppelin-contracts-upgradeable@v4.5.2
-	forge install openzeppelin/openzeppelin-contracts@v4.5.0
+    forge install openzeppelin/openzeppelin-contracts-upgradeable@v4.5.2
+    forge install openzeppelin/openzeppelin-contracts@v4.5.0
 
 # Build & test
 build:
@@ -36,23 +36,25 @@ build:
 test:
     forge test -vvvv 
 flatten: 
-	@forge flatten ./src/ACTTokenBNB.sol > ./out/ACTTokenBNB.flat.sol
+    @forge flatten ./src/NftTemplate.sol > ./out/NftTemplate.flat.sol
 # estimate :; ./scripts/estimate-gas.sh ${contract}
 # size   :; ./scripts/contract-size.sh ${contract}
 abi-out:
-	jq '.abi' ./out/ACTTokenBNB.sol/ACTTokenBNB.json > ./out/ACTTokenBNBAbi.json
-	# cp -r ./out/AminoTokenAbi.json ./frontend/src
+    jq '.abi' ./out/NftTemplate.sol/NftTemplate.json > ./out/NftTemplateAbi.json
 
 testnet:
-	docker run --rm -p 9944:9944 -p 9933:9933 --name amino-dev gcr.io/alpha-carbon/amino:v0.8.0 --dev --execution=native --ws-external --rpc-external --sealing 3000 -linfo,pallet_ethereum=trace,evm=trace
+    docker run --rm -p 9944:9944 -p 9933:9933 --name amino-dev gcr.io/alpha-carbon/amino:v0.8.0 --dev --execution=native --ws-external --rpc-external --sealing 3000 -linfo,pallet_ethereum=trace,evm=trace
 
 
-TESTNET_PARAMS := "--rpc-url http://localhost:9933 --private-key " + ALITH_KEY
-TESTNET_CON_ARGS := ALITH_ADDR + " 10000000000000000"
-deploy-testnet: (_deploy TESTNET_PARAMS TESTNET_CON_ARGS)
+TESTNET_PARAMS := "--rpc-url http://localhost:8545 --private-key " + BOBTH_KEY
+TESTNET_CON_ARGS := BOBTH_ADDR + " 10000000000000000"
+deploy-testnet: (_deploy TESTNET_PARAMS)
 
 
-_deploy params con_args:
+_deploy params:
+    #!/usr/bin/env bash
     echo {{params}}
-    echo {{con_args}}
-    @forge create {{params}} --legacy ACTTokenBNB --constructor-args {{con_args}}
+    render_address=$( forge create {{params}} --legacy NftTemplateRenderer | grep 'Deployed to' | sed -e 's#.*Deployed to: \(\)#\1#' )
+    echo "Render Address:" ${render_address}
+    nft_address=$( forge create {{params}} --legacy NftTemplate --constructor-args ${render_address} | grep 'Deployed to' | sed -e 's#.*Deployed to: \(\)#\1#' )
+    echo "NFT Address:" ${nft_address}

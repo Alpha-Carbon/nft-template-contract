@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 
 import "./NftTemplateRenderer.sol";
 
@@ -17,13 +18,7 @@ library Errors {
     string constant RendererUpgradeDisabled = "renderer upgrade disabled";
 }
 
-contract NftTemplate is ERC721, Ownable {
-    uint256 public constant AUCTION_START_PRICE = 1 ether;
-    uint256 public constant AUCTION_DURATION = 1 hours;
-
-    uint256 public auctionStarted;
-
-    mapping(uint256 => bool) viaBurn; // Numbers that were created via burn
+contract NftTemplate is ERC721Enumerable, Ownable {
 
     /// disableRenderUpgrade is whether we can still upgrade the tokenURI renderer.
     /// Once it is set it cannot be unset.
@@ -35,15 +30,6 @@ contract NftTemplate is ERC721, Ownable {
 
     constructor(address _renderer) ERC721("NftTemplate", "TEMPLATE") {
         renderer = ITokenRenderer(_renderer);
-        _refresh();
-    }
-
-    /**
-     * @dev Generate a fresh sequence available for sale based on the current block state.
-     */
-    function _refresh() internal {
-        auctionStarted = block.timestamp;
-        emit Refresh();
     }
 
     // Public views:
@@ -58,27 +44,21 @@ contract NftTemplate is ERC721, Ownable {
         return !_exists(num);
     }
 
-    /// @notice Returns whether num was minted by burning, or if it is an original from auction.
-    function isMintedByBurn(uint256 num) external view returns (bool) {
-        return viaBurn[num];
-    }
-
     // Main interface:
 
     /**
      * @notice Mint one of the numbers that are currently for sale at the current dutch auction price.
      * @param to Address to mint the number into.
-     * @param num Number to mint, must be in the current for-sale sequence.
      *
      * Emits a {Refresh} event.
      */
-    function mint(address to, uint256 num) external payable {
+    function mint(address to) external payable {
         uint256 price = currentPrice();
-        require(price <= msg.value, Errors.UnderPriced);
-        require(isForSale(num), Errors.NotForSale);
+        uint256 tokenId = totalSupply();
 
-        _mint(to, num);
-        _refresh();
+        require(price <= msg.value, Errors.UnderPriced);
+        require(isForSale(tokenId), Errors.NotForSale);
+        _mint(to, tokenId);
 
         if (msg.value > price) {
             // Refund difference of currentPrice vs msg.value to allow overbidding
@@ -92,16 +72,15 @@ contract NftTemplate is ERC721, Ownable {
      *
      * Emits a {Refresh} event.
      */
-    function mintAll(address to) external payable {
+    function mintBatch(address to, uint256 amount) external payable {
         uint256 price = currentPrice();
         require(price <= msg.value, Errors.UnderPriced);
 
-        for (uint256 i = 0; i < forSale.length; i++) {
-            if (_exists(forSale[i])) continue;
-            _mint(to, forSale[i]);
+        uint256 current = totalSupply();
+        for (uint256 i = current; i < current + amount; i++) {
+            if (_exists(i)) continue;
+            _mint(to, i);
         }
-
-        _refresh();
 
         if (msg.value > price) {
             // Refund difference of currentPrice vs msg.value to allow overbidding
@@ -110,43 +89,16 @@ contract NftTemplate is ERC721, Ownable {
     }
 
     /**
-     * @notice Refresh the auction without minting once the auction price is 0. More gas efficient than doing a free mint.
-     *
-     * Emits a {Refresh} event.
-     */
-    function refresh() external {
-        require(currentPrice() == 0, Errors.UnderPriced);
-        _refresh();
-    }
-
-    /**
      * @notice Burn two numbers together using a mathematical operation, producing
      *   a new number if it is not already taken. No minting fee required.
-     * @param to Address to mint the resulting number into.
-     * @param num1 Number to burn, must own
-     * @param op Operation to burn num1 and num2 with, one of: add, sub, mul, div
-     * @param num2 Number to burn, must own
+     * @param tokenId Number to burn, must own
      */
     function burn(
         address to,
-        uint256 num1,
-        string calldata op,
-        uint256 num2
+        uint256 tokenId
     ) external {
-        require(num1 != num2, Errors.NoSelfBurn);
-        require(ownerOf(num1) == _msgSender(), Errors.MustOwnNum);
-        require(ownerOf(num2) == _msgSender(), Errors.MustOwnNum);
-
-        uint256 num = operate(num1, op, num2);
-        require(!_exists(num), Errors.AlreadyMinted);
-
-        _mint(to, num);
-        viaBurn[num] = true;
-
-        _burn(num1);
-        _burn(num2);
-        delete viaBurn[num1];
-        delete viaBurn[num2];
+        require(ownerOf(tokenId) == _msgSender(), Errors.MustOwnNum);
+        _burn(tokenId);
     }
 
     // Renderer:
