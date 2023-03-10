@@ -37,6 +37,9 @@ test:
     forge test -vvvv 
 flatten: 
     @forge flatten ./src/NftTemplate.sol > ./out/NftTemplate.flat.sol
+flatten-renderer: 
+    @forge flatten ./src/NftTemplateRenderer.sol > ./out/NftTemplateRenderer.flat.sol
+
 # estimate :; ./scripts/estimate-gas.sh ${contract}
 # size   :; ./scripts/contract-size.sh ${contract}
 abi-out:
