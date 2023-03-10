@@ -34,7 +34,8 @@ contract NftTemplateRenderer is ITokenRenderer {
 
 
     function _getColor(uint256 tokenId) internal pure returns (string memory){
-      
+      // map u256 space to hex color space (#FFFFFF) which is 24 bits ,
+      // right shift 256 - 24 = 232 bits now
       uint256 color = uint256(keccak256(abi.encodePacked(tokenId)) >> 232);
 
       return toHexString(color);
@@ -52,6 +53,7 @@ contract NftTemplateRenderer is ITokenRenderer {
     }
 
     function toHexString(uint a) public pure returns (string memory) {
+        // if hex length < 6 digit after right shifting, padding 0 until 6 digit to fulfill hex color code
         uint count = 6;
         uint b = a;
         while (b != 0) {
