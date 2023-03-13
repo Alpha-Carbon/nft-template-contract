@@ -35,8 +35,8 @@ contract NftTemplate is ERC721Enumerable, Ownable {
     // Public views:
 
     /// @notice The current price of the dutch auction. Winning bids above this price will return the difference.
-    function currentPrice() public view returns (uint256) {
-        return 0;
+    function currentPrice() public pure returns (uint256) {
+        return 0.1 ether;
     }
 
     /// @notice Return whether a number is for sale and eligible
@@ -94,7 +94,6 @@ contract NftTemplate is ERC721Enumerable, Ownable {
      * @param tokenId Number to burn, must own
      */
     function burn(
-        address to,
         uint256 tokenId
     ) external {
         require(ownerOf(tokenId) == _msgSender(), Errors.MustOwnNum);
