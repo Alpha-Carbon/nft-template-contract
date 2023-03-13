@@ -36,7 +36,7 @@ contract NftTemplate is ERC721Enumerable, Ownable {
 
     /// @notice The current price of the dutch auction. Winning bids above this price will return the difference.
     function currentPrice() public pure returns (uint256) {
-        return 0.1 ether;
+        return 0.01 ether;
     }
 
     /// @notice Return whether a number is for sale and eligible
