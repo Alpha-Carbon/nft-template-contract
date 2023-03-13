@@ -31,9 +31,9 @@ contract NftTemplateRenderer is ITokenRenderer {
     function _displayShape(Shape shape) internal pure returns (string memory){
         if(shape == Shape.Circle){
             return "Circle";
-        } if(shape == Shape.Circle){
+        } else if(shape == Shape.Cross){
             return "Cross";
-        } if(shape == Shape.Circle){
+        } else if(shape == Shape.Square){
             return "Square";
         } else {
             return "Triangle";
