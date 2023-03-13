@@ -1,4 +1,4 @@
-# ACT Token Contracts 
+# NFT Template Contract
 
 ## Project Structure
 
