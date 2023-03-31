@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
+import "@openzeppelin/contracts/utils/Counters.sol";
 
 import "./NftTemplateRenderer.sol";
 
@@ -27,6 +28,8 @@ contract NftTemplate is ERC721Enumerable, Ownable {
 
     /// @notice Emitted when the auction batch is refreshed.
     event Refresh(); // TODO: Do we want to include any fields?
+    using Counters for Counters.Counter;
+    Counters.Counter private currentTokenId;
 
     constructor(address _renderer) ERC721("NftTemplate", "TEMPLATE") {
         renderer = ITokenRenderer(_renderer);
@@ -54,16 +57,19 @@ contract NftTemplate is ERC721Enumerable, Ownable {
      */
     function mint(address to) external payable {
         uint256 price = currentPrice();
-        uint256 tokenId = totalSupply();
+        uint256 tokenId = currentTokenId.current();
 
         require(price <= msg.value, Errors.UnderPriced);
         require(isForSale(tokenId), Errors.NotForSale);
+
         _mint(to, tokenId);
 
         if (msg.value > price) {
             // Refund difference of currentPrice vs msg.value to allow overbidding
             payable(msg.sender).transfer(msg.value - price);
         }
+
+        currentTokenId.increment();
     }
 
     /**

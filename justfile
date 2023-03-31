@@ -55,6 +55,9 @@ deploy-testnet: (_deploy TESTNET_PARAMS)
 GOERLI_PARAMS := "-i --rpc-url https://rpc.ankr.com/eth_goerli --gas-price 250000000000" 
 deploy-goerli: (_deploy GOERLI_PARAMS)
 
+AMX_TESTNET_PARAMS := "-i --rpc-url https://aminoxtestnet.node.alphacarbon.network --gas-price 250000000000" 
+deploy-amx-testnet: (_deploy AMX_TESTNET_PARAMS)
+
 _deploy params:
     #!/usr/bin/env bash
     echo {{params}}
